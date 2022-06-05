@@ -44,11 +44,6 @@ Specifically, we provide:
 - Modern, extendable and reusable **GUI**
 - Novel user-interactable and composable **Actions and Tasks**
 
-<!--
-You can have `style` tag in markdown to override the style for the current page.
-Learn more: https://sli.dev/guide/syntax#embedded-styles
--->
-
 <style>
 h1 {
   background-image: linear-gradient(45deg, #ff6d91 10%, #cc5774 20%);
@@ -74,3 +69,18 @@ h1 {
     - Express, Fastify
     - Webpack, Vite
     - KoishiJS
+
+---
+
+# The Plugin problem
+
+- Q: How to share functions between plugins?
+- To this question, some framworks has given their best practice
+- Example: [KoishiJS Service](https://koishi.js.org/guide/plugin/service.html#%E6%9C%8D%E5%8A%A1%E7%9A%84%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F)
+- The core concept here is **D**ependency **I**njection or **I**nverse **o**f **C**ontrol
+- Plugin inject custom property to (somehow) global objects, then other plugins could use them
+- Typing is archived using TypeScript declartion merging
+- However, there're still more problems:
+  - 🤯 Plugin side-effects
+  - 🤔 Same plugin, multiple instance
+  - 😂 One crash, all crash
