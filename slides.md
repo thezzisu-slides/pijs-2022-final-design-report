@@ -1,6 +1,6 @@
 ---
 theme: seriph
-background: /assets/background.jpg
+background: /background.jpg
 class: "text-center"
 # https://sli.dev/custom/highlighters.html
 highlighter: shiki
@@ -12,11 +12,17 @@ info: |
   Background Art credit: [大核斧子](https://www.pixiv.net/users/73955870)
 drawings:
   persist: false
+download: true
 ---
 
 # PiJS Final Design Report
 
 & Prototype Design for ChiJS Project
+
+<div class="abs-tl m-6 flex gap-2 opacity-70">
+  <img src="/PKULogo.svg" class="w-16" >
+  <img src="/chi.svg" class="w-16" >
+</div>
 
 <div class="abs-br m-6 flex gap-2">
   <a href="https://github.com/thezzisu-slides/pijs-2022-final-design-report" target="_blank" alt="GitHub"
