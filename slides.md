@@ -1,6 +1,6 @@
 ---
 theme: seriph
-background: assets/background.jpg
+background: /assets/background.jpg
 class: "text-center"
 # https://sli.dev/custom/highlighters.html
 highlighter: shiki
