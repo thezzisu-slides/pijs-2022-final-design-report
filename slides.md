@@ -32,7 +32,7 @@ title: PiJS Final Design Report
 </div>
 
 <!--
-The last comment block of each slide will be treated as slide notes. It will be visible and editable in Presenter Mode along with the slide. [Read more in the docs](https://sli.dev/guide/syntax.html#notes)
+[ChiJS Repo](https://github.com/thezzisu/chi)
 -->
 
 ---
@@ -54,13 +54,13 @@ Specifically, we provide:
 layout: section
 ---
 
-# 1. Background
+# Background
 
 
 ---
 
-# 1. Background
-## 1.1 JavaScript ecosystem: the Plugin problem
+# Background
+## JavaScript ecosystem: the Plugin problem
 
 - Lot's of JS framworks supports 'plugin' to make them extendable
 - How to implement the plugin function?
@@ -75,7 +75,7 @@ layout: section
 
 ---
 
-# 1.1 The Plugin problem
+# The Plugin problem
 ## Module based plugins
 - Q: How to share functions between plugins?
 - To this question, some framworks has given their best practice
@@ -87,7 +87,7 @@ layout: section
 
 ---
 
-# 1.1 The Plugin problem
+# The Plugin problem
 ## Module based plugins
 - Pros:
   - Easy to implement
@@ -104,7 +104,7 @@ layout: section
 
 ---
 
-# 1.1 The Plugin problem
+# The Plugin problem
 
 - However, there are other ways to implement plugins
 - We could load plugins into separate processes and communicate with them using IPC
@@ -114,7 +114,7 @@ layout: section
 
 ---
 
-# 1.1 The Plugin problem
+# The Plugin problem
 ## Process based plugins
 - Props:
   - 😋 No side-effects
@@ -131,7 +131,7 @@ layout: section
 
 ---
 
-# 1.1 The Plugin problem
+# The Plugin problem
 - In ChiJS, we implemented a **process based** plugin system
 - A low-overhead **RPC** mechanism is provided
 - Typeing is archived using **global type injection** based on TypeScript declartion merging
@@ -139,25 +139,139 @@ layout: section
 
 ---
 
-# 1. Background
-## 1.2 JavaScript ecosystem: the Type problem
+# Background
+## JavaScript ecosystem: the Type problem
 
--
+- Normally, when using TypeScript, we just need to import desired variables which are narually typed
+
+```ts
+// add.ts
+export async function add(a: number, b: number): number {}
+// main.ts
+import { add } from './add.js'
+```
+
+- But in some scenario, we need to indirectly/remotely use a function or variable, which couldn't be archived through `import`
+- Suppose we have a RESTful service `adder` which provides a single method `add`
+```ts
+// service.ts
+export async function add(a: number, b: number): number {}
+registerEndpoint(add)
+// client.ts
+const client = new Client('http://localhost:3000')
+const c = await client.add(1, 2) // <- How to automatically type this?
+```
 
 
 ---
 
+# The Type Problem
+- Solution 1: Code generator
+- Since we have access to the whole code...
+- We can analysis the service code (or the running service), then generate client code!
+- Examples: [Swagger Codegen](https://swagger.io/tools/swagger-codegen/) and [ProtoBuf](https://developers.google.com/protocol-buffers)
+- Pros:
+  - Intuitive
+  - Not limited to the JavaScript world
+  - Flexible
+- Cons:
+  - 🤯 Analyzing JavaScript code is really, super, exterme **HARD**
+  - 😢 Typings are **complex** as they may dependes on other types
+  - Thus, we need to write **schemas** for APIs which brings duplication of work
+
 
 ---
 
+# The Type Problem
+## Code generator pseudo code
+```ts
+async function add(a: number, b: number): number {}
+const schema = {
+  props: [
+    { type: 'number' },
+    { type: 'number' }
+  ],
+  returns: {
+    type: 'number'
+  }
+}
+registerEndpoint(schema, add)
+```
+- Not DRY
+- Requires additional checks on schema and type consistency
+- Personally, this method is not preferable
+
 
 ---
 
+# The Type Problem
+- Solution 2: `import type` and type functions
+- Use `import type` to prevent TypeScript generating real import statements
+- Use type functions to transform types
+- Pros:
+  - No need to generate code - avoids lots of problems!
+  - Complex types are supported
+- Cons:
+  - Dependency problem
+    - We just need the type, not the implementation!
+  - Requires some TS tricks, which leads to ninja code (hard to understand)
+
 
 ---
 
+# The Type Problem
+## import type and type function pseudo code
+```ts
+// service.ts
+export async function add(a: number, b: number): number {}
+registerEndpoint(add)
+// client.ts
+import type { add } from './service.js'
+const client = new Client<{add: add}>('https://localhost:3000')
+const result = await client.add(1, 2)
+```
+
 
 ---
+
+# The Type Problem
+- For the second solution, we can do more optimizations:
+- Use `Type Injection` instead of `import type`
+- Split type definition from implementation
+- Example pseudo code using our method:
+```ts
+// plugin.ts
+type SelfDescriptor = PluginTypeDescriptor<{ foo(bar: string): number }>
+declare module '@chijs/core' {
+  interface IPluginDescriptors {
+    '~/plugin.ts': SelfDescriptor
+  }
+}
+new PluginBuilder<SelfDescriptor>().build((ctx) => {
+	endpoint.provide('foo', (bar) => +bar) // Type checked!
+})
+// another-plugin.ts
+...
+const proxy = await ctx.getServiceProxy<DescriptorOf<'~/plugin.ts'>>('some-service')
+const result = proxy.foo('123') // 123
+```
+
+---
+
+# Background
+## JavaScript ecosystem: the UI problem
+
+- To write a GUI or not to write, that is the question
+- A few months ago, I write JS code for 5min to implement a AC remote, but spent more then 5hr on turning it into a SPA 😂
+- Is there a way to implement basic user interaction without wasting time on GUI?
+
+
+---
+
+# Background
+- The RPC implemention is based on a primitive version I wrote in middle school. It's so true that college life is no easier than high school
+- In fact, I was thinking about the type problem back in 2021, and implemented a prototype called `defapi` in the fall semester of that year
+- Thanks to this course for giving me the opportunity to put those ideas into practice 😘
 
 
 ---
