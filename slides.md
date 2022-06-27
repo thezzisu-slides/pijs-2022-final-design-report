@@ -1,6 +1,7 @@
 ---
 theme: seriph
 background: /background.jpg
+favicon: /favicon.ico
 class: text-center
 highlighter: shiki
 lineNumbers: true
