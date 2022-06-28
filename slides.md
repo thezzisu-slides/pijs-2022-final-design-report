@@ -13,7 +13,6 @@ info: |
 drawings:
   persist: false
 download: true
-monaco: true
 title: PiJS Final Design Report
 ---
 
@@ -422,7 +421,7 @@ For example, RPCEndpoint and RPCHandle could have their method signatures abstra
 [@chijs/rpc](https://github.com/thezzisu/chi/tree/development/packages/rpc)
 
 Code extracted from our implementation:
-```ts {monaco}
+```ts
 // @ts-nocheck
 interface RpcTypeDescriptor<A extends {}, B extends {}> {
   provide: A
@@ -536,12 +535,10 @@ However, service can also be managed via UI
 
 Example Chijs plugin
 
-<div class="absolute inset-4 flex">
-  <div class="wrapper flex-1 relative pt-36 px-8">
+<div class="absolute inset-4 flex pt-36 px-8">
+  <div class="overflow-scroll flex-1">
 
-```ts {monaco}
-// @ts-nocheck
-// Since we cannot provide type info in browser, just turn off type checker
+```ts
 import { definePlugin, PluginDescriptorOf } from '@chijs/app'
 import { RpcTypeDescriptor } from '@chijs/rpc'
 import { Type } from '@chijs/util'
@@ -622,9 +619,6 @@ declare module '@chijs/app' {
 }
 
 export default plugin
-
-
-//
 ```
 
   </div>
@@ -635,6 +629,7 @@ iframe {
   height: 100% !important;
 }
 </style>
+
 
 ---
 
@@ -720,7 +715,7 @@ This packages is built using following frameworks/packages:
 - [Electron-builder](https://www.electron.build)
 - ...
 
-Thanks to them, we can focus on
+Although a SPA version is available [here](https://chiui.zisu.dev), it's recommended to try it with a ChiJS server
 
 
 ---
@@ -728,6 +723,13 @@ Thanks to them, we can focus on
 # Introduction
 [@chijs/create-chi](https://github.com/thezzisu/chi/tree/development/packages/create-chi)
 
+This packages is another CLI for `yarn create` or `npm init`, providing a guide to create a ChiJS project
+
+Example
+```
+yarn create chi
+```
+
 
 ---
 layout: section
@@ -738,20 +740,21 @@ layout: section
 ---
 
 # Architecture
+C/S mode
 
-- TODO: write arch
-
----
-layout: section
----
-
-# Getting Started
+<div class="absolute inset-4 flex pt-24 px-8 justify-center">
+  <img src="/arch-main.svg">
+</div>
 
 ---
 
-# Getting Started
+# Architecture
+Desktop mode
 
-- TODO: write getting started
+<div class="absolute inset-4 flex pt-24 px-8 justify-center">
+  <img src="/arch-electron.svg">
+</div>
+
 
 ---
 layout: section
@@ -803,8 +806,8 @@ layout: section
 # Thanks
 
 - We are honored to take this interesting and fulfilling course
-- As a self-learned developer, it's mind-refreshing to systemically review the language I use everyday, and to correct some incomplete perceptions
-- ...
+- As a self-learned developer, it's mind-refreshing to systemically review the language I use everyday, and to correct some incomplete perceptions - @thezzisu
+- TODO: add another section for thanks
 - Upon the completion of this work, We am grateful to those who have offered us encouragement and support during the course of my study.
 - Special acknowledgment must be given to our respectable teacher whose patient instruction and constructive homeworks are beneficial to us a lot.
 
@@ -817,9 +820,20 @@ background: /background.jpg
 # EOF
 
 Project members
+- 张子苏 2100012732 [thezzisu](https://www.github.com/thezzisu)
+- TODO: add more members
 
-张子苏 2100012732 [thezzisu](https://www.github.com/thezzisu)
+<style>
+ul {
+  list-style: none !important;
+}
 
-<!--
-还有一位
--->
+li {
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+
+.slidev-layout {
+  text-align: left !important;
+}
+</style>
