@@ -13,6 +13,7 @@ info: |
 drawings:
   persist: false
 download: true
+monaco: true
 title: PiJS Final Design Report
 ---
 
@@ -361,6 +362,313 @@ Each package is inside `/packages/<PKGNAME>`
 Run `yarn build` at repo root will build all packages by their topo-order, which is required for development
 
 The following slides will brief on those packages
+---
+
+# Introduction
+[@chijs/util](https://github.com/thezzisu/chi/tree/development/packages/util)
+
+Shared utilities including
+- A isomorphic logger based on [pino](https://github.com/pinojs/pino)
+- A type-inferable JSON Schema builder based on [sinclairzx81/typebox](https://github.com/sinclairzx81/typebox)
+- A unique ID generator based on [nanoid](https://github.com/ai/nanoid)
+- Type utilities to prefix / unprefix a object type, spread multiple types, ...
+
+Implementation notes:
+- The TypeScript type system itself is also a functional programming langage
+- Introduction to Computing (A) (Honor Track) provided the required skill to implement complex calculated types
+
+
+---
+
+# Introduction
+[@chijs/rpc](https://github.com/thezzisu/chi/tree/development/packages/rpc)
+
+<div class="abs-tr m-6">
+  <img src="/arch-rpc.svg">
+</div>
+
+Typed generic RPC solution
+
+Design:
+- RPCRouter & RPCAdapter handle messages between
+  
+  multiple RPCEndpoints
+- RPCEndpoint handles messages and invoke desired functions
+- RPCHandle acts as a remote endpoint client and provides
+  
+  invocate/subscribe APIs
+
+See `src/endpoint.ts` for RPCEndpoint/RPCHandle implementation
+
+`src/router.ts` for RPCRouter/RPCAdapter implementation
+
+
+---
+
+# Introduction
+[@chijs/rpc](https://github.com/thezzisu/chi/tree/development/packages/rpc)
+
+How type works?
+
+In ChiJS, I introduced a new way to manipulate types called `TypeDescriptor`
+
+A `TypeDescriptor` is a **virtual** type which contains abstracted type info for other types
+
+For example, RPCEndpoint and RPCHandle could have their method signatures abstracted
+
+---
+
+# Introduction
+[@chijs/rpc](https://github.com/thezzisu/chi/tree/development/packages/rpc)
+
+Code extracted from our implementation:
+```ts {monaco}
+// @ts-nocheck
+interface RpcTypeDescriptor<A extends {}, B extends {}> {
+  provide: A
+  publish: B
+}
+
+class RpcEndpoint<D extends RpcTypeDescriptor<{}, {}>> {
+  provide<K extends ProvideKeys<D>>(name: K, fn: WithThis<RpcHandle<D>, ProvideImpl<D, K>>)
+  publish<K extends PublishKeys<D>>(name: K, fn: WithThis<RpcHandle<D>, PublishImpl<D, K>>)
+}
+
+class RpcHandle<D extends RpcTypeDescriptor<{}, {}>> {
+  async call<K extends ProvideKeys<D>>(name: K, ...args: ProvideArgs<D, K>): Promise<Awaited<ProvideReturn<D, K>>>
+  async exec<K extends ProvideKeys<D>>(name: K, ...args: ProvideArgs<D, K>): Promise<void>
+  async subscribe<K extends PublishKeys<D>>(name: K, cb: PublishCb<D, K>, ...args: PublishArgs<D, K>): Promise<SubscriptionId>
+}
+```
+
+Actual type of RPCEndpoint and RPCHandle is calculated from their descriptor
+---
+
+# Introduction
+[@chijs/rpc](https://github.com/thezzisu/chi/tree/development/packages/rpc)
+
+Example usage:
+```ts
+type Descriptor = RpcTypeDescriptor<{
+  foo(bar: string): Promise<number>
+}, {}>
+
+endpoint // RPCEndpoint<Descriptor>
+  .provide('foo', (bar) => +bar) // Infered arg type is (bar: string) => Awaitable<number>
+
+handle // RPCHandle<Descriptor>
+  .call('foo', '123') // Infered type is call('foo', bar: string) => Promise<number>
+  .then(r => r === 123) // true
+```
+
+---
+
+# Introduction
+[@chijs/rpc](https://github.com/thezzisu/chi/tree/development/packages/rpc)
+
+However, use `handle.call` is not so geek
+
+We provided a way to wrap a RPCHandle into a object with properties mapped to corresponding calls using Proxy
+
+eg.
+```ts
+handle.call('foo', '123')
+// equals to
+const proxy = createRpcWrapper(handle, '')
+proxy.foo('123')
+```
+
+See `src/wrapper.ts` for implementation
+
+---
+
+# Introduction
+[@chijs/rpc](https://github.com/thezzisu/chi/tree/development/packages/rpc)
+
+In fact, like `@vue/reactivity`, this package is also useful outside ChiJS
+
+A untyped version is already used in some of my earlier projects
+
+
+---
+
+# Introduction
+[@chijs/app](https://github.com/thezzisu/chi/tree/development/packages/app)
+
+This packages is the core of whole project, providing a ChiServer class to start a ChiJS server, and a set of utilities to define a ChiJS plugin
+
+The server part will be explained in next section (Architecture). Let's dive into the plugin part first
+
+A Chijs Plugin have two import concepts: **Action** and **Unit**
+
+---
+
+# Introduction
+[@chijs/app](https://github.com/thezzisu/chi/tree/development/packages/app)
+
+A **Action** defines a function that'll get called during a **Task**. During a Action execuation, Chi Server will create a **Job** inside the **Task**,  fork a Node.JS process associated with that **Job** and **Task**, then execuate the action
+
+**Action**s are designed to be composable, eg. a action could easily invoke other actions like calling a remote method. All actions invoked during a **Task** is recorded as corresponding **Job**s
+
+ChiJS Plugins will **never** get execuated in ChiJS server process; instead, we provides special actions prefixed with `#` to be automatically trigged on specific server events (currently only `#onload` is implemented)
+
+This design ensures all actions are side-effect free to ChiJS server
+
+---
+
+# Introduction
+[@chijs/app](https://github.com/thezzisu/chi/tree/development/packages/app)
+
+A **Unit** defines a function that'll get called when starting a **Service**
+
+Different from **Action**, a **Unit** do not have result, and the execuation process will remain running after the unit function return
+
+A **Unit** have a RPCTypeDescriptor associated, which made communications between services easy
+
+In practice, it's recommended to create services using actions - for example, a plugin could create serviced when being loaded using `#onload` action
+
+However, service can also be managed via UI
+
+---
+
+# Introduction
+[@chijs/app](https://github.com/thezzisu/chi/tree/development/packages/app)
+
+Example Chijs plugin
+
+<div class="absolute inset-4 flex">
+  <div class="wrapper flex-1 relative pt-36 px-8">
+
+```ts {monaco}
+// @ts-nocheck
+// Since we cannot provide type info in browser, just turn off type checker
+import { definePlugin, PluginDescriptorOf } from '@chijs/app'
+import { RpcTypeDescriptor } from '@chijs/rpc'
+import { Type } from '@chijs/util'
+
+type FooURD = RpcTypeDescriptor<
+  {
+    foo(bar: string): Promise<number>
+    bar(a: string, b: string): Promise<string>
+  },
+  {}
+>
+
+const plugin = definePlugin((b) =>
+  b
+    .params(
+      Type.Object({
+        foo: Type.String(),
+        wait: Type.String()
+      })
+    )
+    .action('#onload', (b) =>
+      b.build(async (ctx) => {
+        const service = await ctx
+          .plugin('~/foo.ts')
+          .unit('foo')
+          .create('plugin-foo-1', { wait: '123' })
+        await ctx.api.service.start(service.id)
+        ctx.logger.info('plugin-foo-1 started')
+      })
+    )
+    .action('sumer', (b) =>
+      b
+        .name('sumer')
+        .params(Type.Object({ nums: Type.Array(Type.Number()) }))
+        .result(Type.Number())
+        .build(async (ctx, params) => params.nums.reduce((a, b) => a + b))
+    )
+    .action('quiz', (b) =>
+      b
+        .name('Simple Quiz')
+        .description('# A simple quiz')
+        .result(Type.Boolean())
+        .build(async (ctx) => {
+          const a = await ctx.agent.prompt('input a number:')
+          const b = parseInt(a, 10)
+          if (isNaN(b)) {
+            await ctx.agent.alert('invalid input')
+            throw new Error('Fucked!')
+          }
+          const c = await ctx.agent.prompt('input another number:')
+          const d = parseInt(c, 10)
+          const result = await ctx
+            .self()
+            .action('sumer')
+            .run({ nums: [1, 2, 3] })
+          ctx.agent.notify(`result = ${result}`)
+          return b === d
+        })
+    )
+    .unit('foo', (b) =>
+      b
+        .attach<FooURD>()
+        .params(Type.Object({ wait: Type.Optional(Type.String()) }))
+        .build(async (ctx, params) => {
+          ctx.endpoint.provide('foo', (bar) => +bar)
+          ctx.endpoint.provide('bar', (a, b) => `${a} + ${b}!`)
+          ctx.logger.info(params)
+          ctx.logger.info(ctx.params)
+        })
+    )
+    .build()
+)
+
+declare module '@chijs/app' {
+  interface IPluginDescriptors {
+    '~/foo.ts': PluginDescriptorOf<typeof plugin>
+  }
+}
+
+export default plugin
+
+
+//
+```
+
+  </div>
+</div>
+  
+<style>
+iframe {
+  height: 100% !important;
+}
+</style>
+
+---
+
+# Introduction
+[@chijs/app](https://github.com/thezzisu/chi/tree/development/packages/app)
+
+Moreover, ChiJS plugins are **Fully Typed** with Descriptors
+
+The implementation is like those in `@chijs/rpc`, and the basic ideas are the same
+
+See `src/plugin/*.ts` for details
+
+
+---
+
+# Introduction
+[@chijs/client](https://github.com/thezzisu/chi/tree/development/packages/client)
+
+---
+
+# Introduction
+[@chijs/cli](https://github.com/thezzisu/chi/tree/development/packages/cli)
+
+---
+
+# Introduction
+[@chijs/ui](https://github.com/thezzisu/chi/tree/development/packages/ui)
+
+
+---
+
+# Introduction
+[@chijs/create-chi](https://github.com/thezzisu/chi/tree/development/packages/create-chi)
+
 
 ---
 layout: section
@@ -390,13 +698,56 @@ layout: section
 layout: section
 ---
 
+# Future
+
+---
+
+# Future
+Functionality
+
+- Custom view in UI: let plugin add pages into ui
+  - could be implemented using `<iframe>`
+- Stabilize API
+- API for file mapping
+- Development mode for auto HMR
+- Plugin ecosystem
+  - Plugin for KoishiJS, HTTP server, ...
+  - Scheduler to dispatch actions at specific times/events
+  - Sysinfo to act as server dashboard
+- ...
+
+---
+
+# Future
+Community
+
+- Move the repository into a sperate organization
+- **Docs**
+
+---
+
+# Future
+
+<div class="h-full flex items-center justify-center pb-32">
+  <div class="text-5xl">Your valuable advices are welcomed!</div>
+</div>
+
+
+---
+layout: section
+---
+
 # Thanks
 
 ---
 
 # Thanks
 
-- TODO: write thanks
+- We are honored to take this interesting and fulfilling course
+- As a self-learned developer, it's mind-refreshing to systemically review the language I use everyday, and to correct some incomplete perceptions
+- ...
+- Upon the completion of this work, We am grateful to those who have offered us encouragement and support during the course of my study.
+- Special acknowledgment must be given to our respectable teacher whose patient instruction and constructive homeworks are beneficial to us a lot.
 
 
 ---
