@@ -647,21 +647,80 @@ The implementation is like those in `@chijs/rpc`, and the basic ideas are the sa
 
 See `src/plugin/*.ts` for details
 
+Server APIs are provided via a special RPC Endpoint identified by `#server`, which made it easy to expose these APIs in plugin context and client
+
+Implementations can be found in `src/server/rpc/*.ts`
+
 
 ---
 
 # Introduction
 [@chijs/client](https://github.com/thezzisu/chi/tree/development/packages/client)
 
+A client is just a RPC Endpoint communicating with server via WebSocket. In details, `socket.io` is used to make reliable duplex streams between client and server
+
+Server APIs are exposed using `createRpcWrapper` function provided in `@chijs/rpc`
+
+Thus, the client package is very tiny (~50 lines of code)
+
+See `src/index.ts` for implementation.
+
+
 ---
 
 # Introduction
 [@chijs/cli](https://github.com/thezzisu/chi/tree/development/packages/cli)
 
+This package contains a command line interface to
+- Spin up a ChiJS server,
+- Launch a REPL with a ChiJS client
+
+```
+$ chi --help
+chi <command>
+
+Commands:
+  chi serve [config]  Start Chi Server
+  chi connect <url>   Connect to Chi server
+
+Options:
+  --help     Show help                                                 [boolean]
+  --version  Show version number                                       [boolean]
+  --managed                                                            [boolean]
+```
+
+Very simple, isn't it? Since ChiJS itself is designed to **wrap other framworks/tools/scripts**, it's apparently better to launch a instance using cli rather then write another script to boot it
+
+
 ---
 
 # Introduction
 [@chijs/ui](https://github.com/thezzisu/chi/tree/development/packages/ui)
+
+This packages contains code for ChiUI - User Interface for ChiJS
+
+Currently we have two build modes:
+- SPA mode
+  - Can connect to a ChiJS server via WebSocket and manage it
+- Electron mode
+  - All features in SPA mode
+  - Can directly run ChiJS server, make using ChiJS CMD free
+  - However, only Linux and Windows binaries are shipped & tested (I don't have a Mac ¯\\_(ツ)_/¯)
+
+---
+
+# Introduction
+[@chijs/ui](https://github.com/thezzisu/chi/tree/development/packages/ui)
+
+This packages is built using following frameworks/packages:
+- [Quasar Framework](https://quasar.dev)
+- [Vue.js 3](https://vuejs.org)
+- [Vite](https://vitejs.dev)
+- [Electron](https://www.electronjs.org)
+- [Electron-builder](https://www.electron.build)
+- ...
+
+Thanks to them, we can focus on
 
 
 ---
