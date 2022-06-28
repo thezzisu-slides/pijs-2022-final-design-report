@@ -807,7 +807,7 @@ layout: section
 
 - We are honored to take this interesting and fulfilling course
 - As a self-learned developer, it's mind-refreshing to systemically review the language I use everyday, and to correct some incomplete perceptions - @thezzisu
-- TODO: add another section for thanks
+- As a JavaScript learner, it's inspring to join in this project and learn so much advanced programming knowledges, and watching our code running correctly encourages me a lot - @HerocatUED
 - Upon the completion of this work, We am grateful to those who have offered us encouragement and support during the course of my study.
 - Special acknowledgment must be given to our respectable teacher whose patient instruction and constructive homeworks are beneficial to us a lot.
 
@@ -821,7 +821,7 @@ background: /background.jpg
 
 Project members
 - 张子苏 2100012732 [thezzisu](https://www.github.com/thezzisu)
-- TODO: add more members
+- 王想   2100013146 [HerocatUED](https://github.com/HerocatUED)
 
 <style>
 ul {
