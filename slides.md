@@ -2,6 +2,7 @@
 theme: seriph
 background: /background.jpg
 favicon: /favicon.ico
+routerMode: hash
 class: text-center
 highlighter: shiki
 lineNumbers: true
